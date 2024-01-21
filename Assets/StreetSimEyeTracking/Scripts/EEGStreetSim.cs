@@ -41,11 +41,12 @@ public class EEGStreetSim : MonoBehaviour
     [Header("Trial Metrics")]
     [SerializeField] private string filePath;
     [SerializeField] private long startTime;
+    [SerializeField] private float dt = 0.1f;
     private StreamWriter eventWriter;
     private IEnumerator eventCoroutine = null;
 
     void OnEnable() {
-        string fname = name + "-" + System.DateTime.Now.ToString("HH-mm-ss") + ".csv";
+        string fname = System.DateTime.Now.ToString("HH-mm-ss") + ".csv";
         filePath = Path.Combine(Application.persistentDataPath, fname);
         startTime = GetUnixTime();
     }
@@ -55,13 +56,12 @@ public class EEGStreetSim : MonoBehaviour
     }
 
     // Start is called before the first frame update
-    void Start()
-    {
+    void Start() {
         eventWriter = new StreamWriter(new FileStream(filePath, FileMode.Create), Encoding.UTF8);
         // Header Line
         eventWriter.WriteLine("unix_ms,event_type,title,description,x,y,z");
         // First Entry: Start
-        eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, $"Trial {numSuccessfulTrials+1} Start"));
+        eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, "Simulation Start"));
         // Start the event coroutine
         eventCoroutine = EventCoroutine();
         StartCoroutine(eventCoroutine);
@@ -74,41 +74,39 @@ public class EEGStreetSim : MonoBehaviour
             // Print the text to our textboxUI if it exists
             if (textboxUI != null) textboxUI.SetText(currentTime.ToString());
             // Check what's underneath the player currently
-            RaycastHit hit;
-            if (Physics.Raycast(xrCamera.position, -Vector3.up, out hit, 5f, positionRaycastLayerMask)) {
-                belowTargetName = hit.transform.gameObject.name;
-                if (belowTargetName == "SouthSidewalk" || belowTargetName == "NorthSidewalk") {
-                    if (currentSide != "Unknown" && currentSide != belowTargetName) {
-                        // At this point, we've crossed successfully. We'll add to our count of successful trials and modify our congestion if necessary
-                        numSuccessfulTrials += 1;
-                        eventWriter.WriteLine(EventLine(currentTime,"Simulation", Vector3.zero, $"Trial {numSuccessfulTrials+1} Start"));
-                        if (carEscalationIndex < trialCarEscalation.Count && numSuccessfulTrials == trialCarEscalation[carEscalationIndex].numCrossings) {
-                            StreetSimCarManager.CM.SetCongestionStatus(trialCarEscalation[carEscalationIndex].setCarsTo);
-                            carEscalationIndex += 1;
-                            TrafficSignalController.current.StartAtSessionIndex(0);
-                        }
-                    }
-                    currentSide = belowTargetName;
-                }
-            } else {
-                belowTargetName = "-";
-            }
             // Create a record for the player's current position
-            eventWriter.WriteLine(EventLine(currentTime,"Player",xrCamera.position,"position",belowTargetName));
+            eventWriter.WriteLine(EventLine(currentTime,"Player",xrCamera.position,"position"));
             // Create a record for the player's current orientation
             eventWriter.WriteLine(EventLine(currentTime,"Player",xrCamera.rotation,"orientation"));
             // Create a record for each eye, as well as the combined eye
+            Vector3 rtp = Vector3.zero;
+            Vector3 rtd = Vector3.zero;
             if (leftEyeTracker != null) {
-                eventWriter.WriteLine(EventLine(currentTime,"Global Eye Tracking", leftEyeTracker.rayTargetPosition, "Left", leftEyeTracker.rayTargetName));
+                // Get the position of the eye tracking RELATIVE to the forward position of the camera
+                rtp = xrCamera.InverseTransformPoint(leftEyeTracker.rayTargetPosition);
+                // Get the relative direction
+                rtd = rtp.normalized;
+                // Record the direction
+                eventWriter.WriteLine(EventLine(currentTime,"Eye Tracking", rtd, "Left", "Direction"));
             }
             if (rightEyeTracker != null) {
-                eventWriter.WriteLine(EventLine(currentTime,"Global Eye Tracking", rightEyeTracker.rayTargetPosition, "Right", rightEyeTracker.rayTargetName));
+                // Get the position of the eye tracking RELATIVE to the forward position of the camera
+                rtp = xrCamera.InverseTransformPoint(rightEyeTracker.rayTargetPosition);
+                // Get the relative direction
+                rtd = rtp.normalized;
+                // Record the direction
+                eventWriter.WriteLine(EventLine(currentTime,"Eye Tracking", rtd, "Right", "Direction"));
             }
-            if (combinedEyeTracker != null && combinedEyeTracker.rayHit) {
-                eventWriter.WriteLine(EventLine(currentTime,"Combined Eye Tracking", combinedEyeTracker.rayTargetPosition, "Center", combinedEyeTracker.rayTargetName));
+            if (combinedEyeTracker != null) {
+                // Get the position of the eye tracking RELATIVE to the forward position of the camera
+                rtp = xrCamera.InverseTransformPoint(combinedEyeTracker.rayTargetPosition);
+                // Get the relative direction
+                rtd = rtp.normalized;
+                // Record the direction
+                eventWriter.WriteLine(EventLine(currentTime,"Eye Tracking", rtd, "Center", "Direction"));
             }
             // Yield return for the next event
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(dt);
         }
     }
 

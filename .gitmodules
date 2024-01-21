@@ -1,0 +1,3 @@
+[submodule "EasierVRAssets"]
+	path = Assets/EasierVRAssets
+	url = git@github.com:kimryan0416/EasierVRAssets.git
