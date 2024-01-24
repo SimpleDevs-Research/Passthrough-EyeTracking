@@ -7,11 +7,6 @@ using System.Text;
 
 public class EEGStreetSim : MonoBehaviour
 {
-    [System.Serializable]
-    public class SetCarManager {
-        public StreetSimCarManager.CarManagerStatus setCarsTo;
-        public int numCrossings;
-    }
 
     public class StreetSimEvent {
         public long unix_ts;
@@ -31,13 +26,8 @@ public class EEGStreetSim : MonoBehaviour
     public InstructionsUI textboxUI;
 
     [Header("Experiment Settings")]
-    public string name;
-    public List<SetCarManager> trialCarEscalation = new List<SetCarManager>();
-    [SerializeField] private string belowTargetName = "Unknown";
-    [SerializeField] private string currentSide = "Unknown";
-    [SerializeField] private int numSuccessfulTrials = 0;
-    [SerializeField] private int carEscalationIndex = 0;
-
+    [SerializeField] private int numTrials = 0;
+    
     [Header("Trial Metrics")]
     [SerializeField] private string filePath;
     [SerializeField] private long startTime;
@@ -62,6 +52,8 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.WriteLine("unix_ms,event_type,title,description,x,y,z");
         // First Entry: Start
         eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, "Simulation Start"));
+        // Initialize with the first trial
+        NextTrial();
         // Start the event coroutine
         eventCoroutine = EventCoroutine();
         StartCoroutine(eventCoroutine);
@@ -117,6 +109,11 @@ public class EEGStreetSim : MonoBehaviour
         long currentTime = GetUnixTime();
         // Write to the event writer
         eventWriter.WriteLine(EventLine(currentTime, event_type, xyz, title, description));
+    }
+
+    public void NextTrial() {
+        numTrials += 1;
+        WriteLine("Simulation",Vector3.zero,$"Trial {numTrials} Start");
     }
 
     void OnDisable() {
