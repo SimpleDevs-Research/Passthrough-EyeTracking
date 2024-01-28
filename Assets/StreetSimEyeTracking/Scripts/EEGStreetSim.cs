@@ -21,6 +21,8 @@ public class EEGStreetSim : MonoBehaviour
     [Header("References")]
     public Transform xrCamera;
     public EyeTrackingRay leftEyeTracker, rightEyeTracker;
+    public Camera leftCamera, rightCamera;
+    public Transform centerAnchor, topleftAnchor, toprightAnchor, bottomleftAnchor;
     public CombinedEyeTracker combinedEyeTracker;
     public LayerMask positionRaycastLayerMask;
     public InstructionsUI textboxUI;
@@ -33,6 +35,7 @@ public class EEGStreetSim : MonoBehaviour
     [SerializeField] private long startTime;
     [SerializeField] private float dt = 0.1f;
     private StreamWriter eventWriter;
+    private IEnumerator startCoroutine = null;
     private IEnumerator eventCoroutine = null;
 
     void OnEnable() {
@@ -52,14 +55,44 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.WriteLine("unix_ms,event_type,title,description,x,y,z");
         // First Entry: Start
         eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, "Simulation Start"));
-        // Initialize with the first trial
-        NextTrial();
         // Start the event coroutine
+        startCoroutine = InitializeCoroutine();
+        StartCoroutine(startCoroutine);
+    }
+
+    private IEnumerator InitializeCoroutine() {
+        // Add the center, topleft, topright, and bottomleft anchor positions relative to the screen
+        Vector3 left_center = leftCamera.WorldToScreenPoint(centerAnchor.position);
+        Vector3 left_topleft = leftCamera.WorldToScreenPoint(topleftAnchor.position);
+        Vector3 left_topright = leftCamera.WorldToScreenPoint(toprightAnchor.position);
+        Vector3 left_bottomleft = leftCamera.WorldToScreenPoint(bottomleftAnchor.position);
+        Vector3 right_center = rightCamera.WorldToScreenPoint(centerAnchor.position);
+        Vector3 right_topleft = rightCamera.WorldToScreenPoint(topleftAnchor.position);
+        Vector3 right_topright = rightCamera.WorldToScreenPoint(toprightAnchor.position);
+        Vector3 right_bottomleft = rightCamera.WorldToScreenPoint(bottomleftAnchor.position);
+        WriteLine("Anchor",left_center,"Left","Center");
+        WriteLine("Anchor",left_topleft,"Left","Top Left");
+        WriteLine("Anchor",left_topright,"Left","Top Right");
+        WriteLine("Anchor",left_bottomleft,"Left","Bottom Left");
+        WriteLine("Anchor",right_center,"Right","Center");
+        WriteLine("Anchor",right_topleft,"Right","Top Left");
+        WriteLine("Anchor",right_topright,"Right","Top Right");
+        WriteLine("Anchor",right_bottomleft,"Right","Bottom Left");
+        yield return new WaitForSeconds(3);
         eventCoroutine = EventCoroutine();
         StartCoroutine(eventCoroutine);
     }
 
     private IEnumerator EventCoroutine() {
+        // Make sure all cameras have their colors reset.
+        leftCamera.backgroundColor = new Color(0f,0f,0f,0f);
+        rightCamera.backgroundColor = new Color(0f,0f,0f,0f);
+        centerAnchor.gameObject.SetActive(false);
+        topleftAnchor.gameObject.SetActive(false);
+        toprightAnchor.gameObject.SetActive(false);
+        bottomleftAnchor.gameObject.SetActive(false);
+        // Initialize with the first trial
+        NextTrial();
         while(true) {
             // Calculate the current time
             long currentTime = GetUnixTime();
@@ -96,6 +129,20 @@ public class EEGStreetSim : MonoBehaviour
                 rtd = rtp.normalized;
                 // Record the direction
                 eventWriter.WriteLine(EventLine(currentTime,"Eye Tracking", rtd, "Center", "Direction"));
+                eventWriter.WriteLine(EventLine(
+                    currentTime,
+                    "Eye Tracking",
+                    leftCamera.WorldToScreenPoint(combinedEyeTracker.rayTargetPosition),
+                    "Left",
+                    "Screen Position"
+                ));
+                eventWriter.WriteLine(EventLine(
+                    currentTime,
+                    "Eye Tracking",
+                    rightCamera.WorldToScreenPoint(combinedEyeTracker.rayTargetPosition),
+                    "Right",
+                    "Screen Position"
+                ));
             }
             // Yield return for the next event
             yield return new WaitForSeconds(dt);
@@ -123,8 +170,11 @@ public class EEGStreetSim : MonoBehaviour
         // Close and flush the writer
         eventWriter.Flush();
         eventWriter.Close();
-        // End the coroutine
-        StopCoroutine(eventCoroutine);
+        // End the coroutines
+        if (startCoroutine != null) 
+            StopCoroutine(startCoroutine);
+        if (eventCoroutine != null) 
+            StopCoroutine(eventCoroutine);
     }
 
     public static long GetUnixTime() {
