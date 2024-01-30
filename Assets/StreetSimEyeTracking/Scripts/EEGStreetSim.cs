@@ -85,6 +85,7 @@ public class EEGStreetSim : MonoBehaviour
 
     private IEnumerator EventCoroutine() {
         // Make sure all cameras have their colors reset.
+        startCoroutine = null;
         leftCamera.backgroundColor = new Color(0f,0f,0f,0f);
         rightCamera.backgroundColor = new Color(0f,0f,0f,0f);
         centerAnchor.gameObject.SetActive(false);
