@@ -22,13 +22,24 @@ public class EEGStreetSim : MonoBehaviour
     public Transform xrCamera;
     public EyeTrackingRay leftEyeTracker, rightEyeTracker;
     public Camera leftCamera, rightCamera;
-    public Transform centerAnchor, topleftAnchor, toprightAnchor, bottomleftAnchor;
+    public Transform centerAnchor;
+    public Transform topleftAnchor, toprightAnchor, bottomleftAnchor;
+    /*
+    public Transform topleftAnchor_10m, toprightAnchor_10m, bottomleftAnchor_10m;
+    public Transform topleftAnchor_50m, toprightAnchor_50m, bottomleftAnchor_50m;
+    */
     public CombinedEyeTracker combinedEyeTracker;
     public LayerMask positionRaycastLayerMask;
     public InstructionsUI textboxUI;
 
     [Header("Experiment Settings")]
     [SerializeField] private int numTrials = 0;
+    public bool deactivateBackground = true;
+    public bool deactivateAnchors = true;
+    /*
+    public bool deactivate10mAnchors = true;
+    public bool deactivate50mAnchors = true;
+    */
     
     [Header("Trial Metrics")]
     [SerializeField] private string filePath;
@@ -70,6 +81,7 @@ public class EEGStreetSim : MonoBehaviour
         Vector3 right_topleft = rightCamera.WorldToScreenPoint(topleftAnchor.position);
         Vector3 right_topright = rightCamera.WorldToScreenPoint(toprightAnchor.position);
         Vector3 right_bottomleft = rightCamera.WorldToScreenPoint(bottomleftAnchor.position);
+
         WriteLine("Anchor",left_center,"Left","Center");
         WriteLine("Anchor",left_topleft,"Left","Top Left");
         WriteLine("Anchor",left_topright,"Left","Top Right");
@@ -78,20 +90,65 @@ public class EEGStreetSim : MonoBehaviour
         WriteLine("Anchor",right_topleft,"Right","Top Left");
         WriteLine("Anchor",right_topright,"Right","Top Right");
         WriteLine("Anchor",right_bottomleft,"Right","Bottom Left");
+
         yield return new WaitForSeconds(3);
+
+        // We'll iterate through all anchors
+        centerAnchor.gameObject.SetActive(true);
+        topleftAnchor.gameObject.SetActive(false);
+        toprightAnchor.gameObject.SetActive(false);
+        bottomleftAnchor.gameObject.SetActive(false);
+        yield return new WaitForSeconds(3);
+
+        centerAnchor.gameObject.SetActive(false);
+        topleftAnchor.gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+
+        topleftAnchor.gameObject.SetActive(false);
+        toprightAnchor.gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+
+        toprightAnchor.gameObject.SetActive(false);
+        bottomleftAnchor.gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+
+        centerAnchor.gameObject.SetActive(true);
+        topleftAnchor.gameObject.SetActive(true);
+        toprightAnchor.gameObject.SetActive(true);
+        bottomleftAnchor.gameObject.SetActive(true);
+        yield return new WaitForSeconds(3);
+
+        // Make sure all cameras have their colors reset.
+        if (deactivateBackground) {
+            leftCamera.backgroundColor = new Color(0f,0f,0f,0f);
+            rightCamera.backgroundColor = new Color(0f,0f,0f,0f);
+        }
+        // Deactivate the 10m anchors
+        if (deactivateAnchors) {
+            centerAnchor.gameObject.SetActive(false);
+            topleftAnchor.gameObject.SetActive(false);
+            toprightAnchor.gameObject.SetActive(false);
+            bottomleftAnchor.gameObject.SetActive(false);
+        }
+        /*
+        if (deactivate10mAnchors) {
+            centerAnchor.gameObject.SetActive(false);
+            topleftAnchor_10m.gameObject.SetActive(false);
+            toprightAnchor_10m.gameObject.SetActive(false);
+            bottomleftAnchor_10m.gameObject.SetActive(false);
+        }
+        if (deactivate50mAnchors) {
+            topleftAnchor_50m.gameObject.SetActive(false);
+            toprightAnchor_50m.gameObject.SetActive(false);
+            bottomleftAnchor_50m.gameObject.SetActive(false);
+        }
+        */
         eventCoroutine = EventCoroutine();
         StartCoroutine(eventCoroutine);
     }
 
     private IEnumerator EventCoroutine() {
-        // Make sure all cameras have their colors reset.
         startCoroutine = null;
-        leftCamera.backgroundColor = new Color(0f,0f,0f,0f);
-        rightCamera.backgroundColor = new Color(0f,0f,0f,0f);
-        centerAnchor.gameObject.SetActive(false);
-        topleftAnchor.gameObject.SetActive(false);
-        toprightAnchor.gameObject.SetActive(false);
-        bottomleftAnchor.gameObject.SetActive(false);
         // Initialize with the first trial
         NextTrial();
         while(true) {
