@@ -24,6 +24,8 @@ public class EEGStreetSim : MonoBehaviour
     public Camera leftCamera, rightCamera;
     public Transform centerAnchor;
     public Transform topleftAnchor, toprightAnchor, bottomleftAnchor;
+
+    //public CSVWriter myWriter;
     /*
     public Transform topleftAnchor_10m, toprightAnchor_10m, bottomleftAnchor_10m;
     public Transform topleftAnchor_50m, toprightAnchor_50m, bottomleftAnchor_50m;
@@ -57,6 +59,7 @@ public class EEGStreetSim : MonoBehaviour
 
     void Awake() {
         ESS = this;
+        //myWriter.Initialize();
     }
 
     // Start is called before the first frame update
@@ -66,6 +69,8 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.WriteLine("unix_ms,event_type,title,description,x,y,z");
         // First Entry: Start
         eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, "Simulation Start"));
+        //MyWriterLine(startTime, Vector3.zero, "Simulation", "Simulation Start");
+
         // Start the event coroutine
         startCoroutine = InitializeCoroutine();
         StartCoroutine(startCoroutine);
@@ -90,6 +95,18 @@ public class EEGStreetSim : MonoBehaviour
         WriteLine("Anchor",right_topleft,"Right","Top Left");
         WriteLine("Anchor",right_topright,"Right","Top Right");
         WriteLine("Anchor",right_bottomleft,"Right","Bottom Left");
+
+        /*
+        long sTime = GetUnixTime();
+        MyWriterLine(sTime, left_center, "Anchor", "Left", "Center");
+        MyWriterLine(sTime, left_topleft, "Anchor", "Left", "Top Left");
+        MyWriterLine(sTime, left_topright, "Anchor", "Left", "Top Right");
+        MyWriterLine(sTime, left_bottomleft, "Anchor", "Left", "Bottom Left");
+        MyWriterLine(sTime, right_center, "Anchor", "Right", "Center");
+        MyWriterLine(sTime, right_topleft, "Anchor", "Right", "Top Left");
+        MyWriterLine(sTime, right_topright, "Anchor", "Right", "Top Right");
+        MyWriterLine(sTime, right_bottomleft, "Anchor", "Right", "Bottom Left");
+        */
 
         yield return new WaitForSeconds(3);
 
@@ -221,7 +238,20 @@ public class EEGStreetSim : MonoBehaviour
         WriteLine("Simulation",Vector3.zero,$"Trial {numTrials} Start");
     }
 
+    /*
+    public void MyWriterLine(long unix_ms, Vector3 xyz, string event_type="", string title="", string description="") {
+        myWriter.AddPayload(unix_ms);
+        myWriter.AddPayload(event_type);
+        myWriter.AddPayload(title);
+        myWriter.AddPayload(description);
+        myWriter.AddPayload(xyz);
+        myWriter.WriteLine();
+    }
+    */
+
     void OnDisable() {
+        //myWriter.Disable();
+
         // Write the final line
         long endTime = GetUnixTime();
         eventWriter.WriteLine(EventLine(endTime, "Simulation", Vector3.zero, "Simulation End"));
