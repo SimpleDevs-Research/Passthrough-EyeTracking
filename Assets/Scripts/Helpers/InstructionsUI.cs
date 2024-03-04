@@ -23,6 +23,7 @@ public class InstructionsUI : MonoBehaviour
     private AnimationCurve movementMultiplier;
     [SerializeField]
     private DisplayType displayType = DisplayType.Fade_In_Out;
+    private DisplayType _displayType;
     [SerializeField] private float distanceThreshold = 2f;
     [SerializeField] private float fadeTimeThreshold = 2f;
     [SerializeField] private float fadeTimeRate = 0.5f;
@@ -35,6 +36,7 @@ public class InstructionsUI : MonoBehaviour
     private void Awake() {
         startTime = Time.time;  // Time since the start of the application
         canvasGroup = GetComponent<CanvasGroup>();
+        _displayType = displayType;
     }
 
     // Update is called once per frame
@@ -61,8 +63,8 @@ public class InstructionsUI : MonoBehaviour
         transform.rotation = Quaternion.LookRotation(transform.position - lookAtTarget.position);
     }
 
-    private void UpdateOpacity() {
-        float newAlpha = 1f;
+    private void UpdateOpacity(float toSetAlpha=1f) {
+        float newAlpha = toSetAlpha;
         switch(displayType) {
             case DisplayType.Fade_In_Out:
                 newAlpha = (!isClose) ? 1f - gradientValue : 1f;
@@ -93,6 +95,12 @@ public class InstructionsUI : MonoBehaviour
             Debug.LogError("Cannot render text onto a nonexisting textbox");
             return;
         }
-        textbox.text = newText;
+        if (newText == null || newText.Length == 0) {
+            textbox.text = "";
+            displayType = DisplayType.Off;
+        } else {
+            textbox.text = newText;
+            displayType = _displayType;
+        }
     }
 }

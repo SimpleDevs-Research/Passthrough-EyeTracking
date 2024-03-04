@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 using System;
 using System.IO;
 using System.Text;
@@ -14,6 +15,14 @@ public class EEGStreetSim : MonoBehaviour
         public string title;
         public string description;
         public float x, y, z;
+    }
+
+    [System.Serializable]
+    public class StreetSimTrialConfig {
+        public string name = null;
+        public string instruction = null;
+        public UnityEvent instructionEvents = null;
+        public UnityEvent trialEvents = null;
     }
 
     public static EEGStreetSim ESS;
@@ -35,7 +44,7 @@ public class EEGStreetSim : MonoBehaviour
     public InstructionsUI textboxUI;
 
     [Header("Experiment Settings")]
-    [SerializeField] private int numTrials = 0;
+    [SerializeField, ReadOnly] private int numTrials = -1;
     public bool deactivateBackground = true;
     public bool deactivateAnchors = true;
     /*
@@ -43,13 +52,21 @@ public class EEGStreetSim : MonoBehaviour
     public bool deactivate50mAnchors = true;
     */
     
+    [Header("Trial Details")]
+    public List<StreetSimTrialConfig> trialInstructions = new List<StreetSimTrialConfig>();
+
     [Header("Trial Metrics")]
     [SerializeField] private string filePath;
     [SerializeField] private long startTime;
     [SerializeField] private float dt = 0.1f;
     private StreamWriter eventWriter;
-    private IEnumerator startCoroutine = null;
+    private IEnumerator calibrationCoroutine = null;
+    private bool calibrationFinished = false;
     private IEnumerator eventCoroutine = null;
+    private StreetSimTrialConfig _currentTrial;
+    [SerializeField, ReadOnly]
+    private bool _instructionsActive = false;
+    private bool add_checkpoint = false;
 
     void OnEnable() {
         string fname = System.DateTime.Now.ToString("HH-mm-ss") + ".csv";
@@ -69,14 +86,85 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.WriteLine("unix_ms,event_type,title,description,x,y,z");
         // First Entry: Start
         eventWriter.WriteLine(EventLine(startTime,"Simulation", Vector3.zero, "Simulation Start"));
-        //MyWriterLine(startTime, Vector3.zero, "Simulation", "Simulation Start");
+
+        // Initialize the first trial, which should ALWAYS be a calibration trial named "Calibration"
+        // If no such trial exists, we can't continue
+        if (trialInstructions[0].name != "Calibration") {
+            return;
+        }
+
+        // Start with the first trial
+        TrialClick();
 
         // Start the event coroutine
-        startCoroutine = InitializeCoroutine();
-        StartCoroutine(startCoroutine);
+        eventCoroutine = EventCoroutine();
+        StartCoroutine(eventCoroutine);
     }
 
-    private IEnumerator InitializeCoroutine() {
+    public void TrialClick() {
+
+        // So there are two scenarios:
+        // 1. There isn't an instruction segment going on
+        //      - If this function is called not during the instruction segment, then we have to initialize the next trial
+        //      - Now, if the next trial has a set of instructions, then we initialize the instruction segment
+        //          Else, we simply skip the instruction segment
+        // 2. There IS an instruction segment active.
+        //      - If this function is called during the instruction segment, we don't iterate the trial number... 
+        //          instead, we remove the instructions and write to the CSV about the instructions ending
+        Debug.Log("CALLED");
+        if (!_instructionsActive) {
+            // Here, we iterate to the next trial because the instructions weren't active
+            numTrials += 1;
+            if (numTrials >= trialInstructions.Count) return;
+            
+            // Initialize the trial
+            _currentTrial = trialInstructions[numTrials];
+            
+            // Should we invoke instructions or not?
+            if (_currentTrial.instruction != null && _currentTrial.instruction.Length > 0 && textboxUI != null) {
+                // If this new trial has a set of instructions, we have to invoke them!
+                // Also, we only invoke instructions if we have the textbox ui active.
+                WriteLine("Simulation", Vector3.zero, $"Trial {numTrials}: {_currentTrial.name}", "Instructions");
+                textboxUI.SetText(_currentTrial.instruction);
+                _instructionsActive = true;
+                // Invoke any events
+                _currentTrial?.instructionEvents.Invoke();
+            } else {
+                // So this trial doesn't have any instructions. We simply continue onward
+                // We write double because we need at least an "Instructions" line and a "Start" line.
+                WriteLine("Simulation", Vector3.zero, $"Trial {numTrials}: {_currentTrial.name}", "Instructions");
+                WriteLine("Simulation", Vector3.zero, $"Trial {numTrials}: {_currentTrial.name}", "Start");
+                textboxUI.SetText(null);
+                _instructionsActive = false;
+                // Invoke any events
+                _currentTrial?.trialEvents.Invoke();
+            }
+        }
+        else {
+            // Here, there were already instructions active
+            // So we have to end them and then invoke any trial events
+            // So this trial doesn't have any instructions. We simply continue onward
+            _currentTrial = trialInstructions[numTrials];
+            WriteLine("Simulation", Vector3.zero, $"Trial {numTrials}: {_currentTrial.name}", "Start");
+            textboxUI.SetText(null);
+            _instructionsActive = false;
+            // Invoke any events
+            _currentTrial?.trialEvents.Invoke();
+        }
+    }
+
+    public void TrialCheckpoint() {
+        // In this situation, you're still in the same trial. But we add a checkpoint.
+        // This is just a boolean
+        add_checkpoint = true;
+
+    }
+    public void InitializeCalibration() {
+        calibrationCoroutine = CalibrationCoroutine();
+        StartCoroutine(calibrationCoroutine);
+    }
+
+    private IEnumerator CalibrationCoroutine() {
         // Add the center, topleft, topright, and bottomleft anchor positions relative to the screen
         Vector3 left_center = leftCamera.WorldToScreenPoint(centerAnchor.position);
         Vector3 left_topleft = leftCamera.WorldToScreenPoint(topleftAnchor.position);
@@ -160,19 +248,25 @@ public class EEGStreetSim : MonoBehaviour
             bottomleftAnchor_50m.gameObject.SetActive(false);
         }
         */
-        eventCoroutine = EventCoroutine();
-        StartCoroutine(eventCoroutine);
+
+        // Set the trigger to let the system know that the coroutine has ended
+        calibrationFinished = true;
+
+        // Initialize with the first trial
+        TrialClick();
     }
 
     private IEnumerator EventCoroutine() {
-        startCoroutine = null;
-        // Initialize with the first trial
-        NextTrial();
         while(true) {
             // Calculate the current time
             long currentTime = GetUnixTime();
             // Print the text to our textboxUI if it exists
-            if (textboxUI != null) textboxUI.SetText(currentTime.ToString());
+            //if (textboxUI != null) textboxUI.SetText(currentTime.ToString());
+            // If we need to add a checkpoint, do so.
+            if (add_checkpoint) {
+                eventWriter.WriteLine(EventLine(currentTime, "Simulation", Vector3.zero, $"Trial {numTrials}: {_currentTrial.name}", "Checkpoint"));
+                add_checkpoint = false;
+            }
             // Check what's underneath the player currently
             // Create a record for the player's current position
             eventWriter.WriteLine(EventLine(currentTime,"Player",xrCamera.position,"position"));
@@ -233,11 +327,6 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.WriteLine(EventLine(currentTime, event_type, xyz, title, description));
     }
 
-    public void NextTrial() {
-        numTrials += 1;
-        WriteLine("Simulation",Vector3.zero,$"Trial {numTrials} Start");
-    }
-
     /*
     public void MyWriterLine(long unix_ms, Vector3 xyz, string event_type="", string title="", string description="") {
         myWriter.AddPayload(unix_ms);
@@ -259,8 +348,8 @@ public class EEGStreetSim : MonoBehaviour
         eventWriter.Flush();
         eventWriter.Close();
         // End the coroutines
-        if (startCoroutine != null) 
-            StopCoroutine(startCoroutine);
+        if (!calibrationFinished & calibrationCoroutine != null) 
+            StopCoroutine(calibrationCoroutine);
         if (eventCoroutine != null) 
             StopCoroutine(eventCoroutine);
     }
