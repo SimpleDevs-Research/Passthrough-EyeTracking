@@ -1,7 +1,7 @@
 [submodule "EasierVRAssets"]
 	path = Assets/EasierVRAssets
-	url = git@github.com:kimryan0416/EasierVRAssets.git
+	url = https://github.com/kimryan0416/EasierVRAssets.git
 
 [submodule "UnityUtils"] 
   path = Assets/UnityUtils 
-  url = git@github.com:SimpleDevs-AR-VR/UnityUtils.git
+  url = https://github.com/SimpleDevs-AR-VR/UnityUtils.git
