@@ -6,8 +6,20 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/StreetSimEyeTrackTemplate.unity
-    guid: f3bb6cf68bb894544853fa1a25337103
+    path: Assets/StartScene.unity
+    guid: 73ec4f3b6386b6b41bb62eed48605db3
+  - enabled: 1
+    path: Assets/2D Overlay Scene.unity
+    guid: a77e719ca071e7440a258362b583f923
+  - enabled: 1
+    path: Assets/3D Ball Scene.unity
+    guid: f69bc31983e416844ae68b67249f4be9
+  - enabled: 1
+    path: Assets/Fixed Objects Scene.unity
+    guid: 0f5683c796339894b9902195225ec8e5
+  - enabled: 1
+    path: Assets/Randomized Objects Scene.unity
+    guid: 78bf8b0cd5eecf44281173f66f966733
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 4478419d75759e44e800b81324ef7afa, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: b90efe3bab373d34fbbca430a1ceac9c, type: 2}
