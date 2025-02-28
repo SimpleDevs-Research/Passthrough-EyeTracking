@@ -6,7 +6,7 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/Scenes/StreetSimEyeTrackTemplate.unity
+    path: Assets/EasierVRAssets/SampleScenes/EyeTrackingTemplate.unity
     guid: f3bb6cf68bb894544853fa1a25337103
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 4478419d75759e44e800b81324ef7afa, type: 2}
