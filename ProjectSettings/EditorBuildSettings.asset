@@ -5,9 +5,12 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Tracking/Scenes/EyeCalibration.unity
     guid: 1a4f19b8f429ff5439420615a748ee6a
+  - enabled: 1
+    path: Assets/Tracking/Scenes/LensCorrection.unity
+    guid: b014cb46197d6af48bb6be80f432c252
   m_configObjects:
     Unity.XR.Oculus.Settings: {fileID: 11400000, guid: 4478419d75759e44e800b81324ef7afa, type: 2}
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: b90efe3bab373d34fbbca430a1ceac9c, type: 2}
