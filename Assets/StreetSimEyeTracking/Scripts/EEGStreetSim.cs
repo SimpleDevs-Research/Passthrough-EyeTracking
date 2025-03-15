@@ -44,7 +44,7 @@ public class EEGStreetSim : MonoBehaviour
     public InstructionsUI textboxUI;
 
     [Header("Experiment Settings")]
-    [SerializeField, ReadOnly] private int numTrials = -1;
+    [SerializeField, ReadOnlyInsp] private int numTrials = -1;
     public bool deactivateBackground = true;
     public bool deactivateAnchors = true;
     /*
@@ -64,7 +64,7 @@ public class EEGStreetSim : MonoBehaviour
     private bool calibrationFinished = false;
     private IEnumerator eventCoroutine = null;
     private StreetSimTrialConfig _currentTrial;
-    [SerializeField, ReadOnly]
+    [SerializeField, ReadOnlyInsp]
     private bool _instructionsActive = false;
     private bool add_checkpoint = false;
 
