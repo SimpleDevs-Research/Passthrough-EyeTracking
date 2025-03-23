@@ -1205,18 +1205,6 @@ PrefabInstance:
       propertyPath: m_Name
       value: FrameCanvas
       objectReference: {fileID: 0}
-    - target: {fileID: 3088286851141069917, guid: b9b19078909a8c84783c6a9830beb1f4, type: 3}
-      propertyPath: m_text
-      value: '-'
-      objectReference: {fileID: 0}
-    - target: {fileID: 3088286851141069917, guid: b9b19078909a8c84783c6a9830beb1f4, type: 3}
-      propertyPath: m_fontSize
-      value: 100
-      objectReference: {fileID: 0}
-    - target: {fileID: 3088286851141069917, guid: b9b19078909a8c84783c6a9830beb1f4, type: 3}
-      propertyPath: m_fontSizeBase
-      value: 100
-      objectReference: {fileID: 0}
     - target: {fileID: 4235481811626009337, guid: b9b19078909a8c84783c6a9830beb1f4, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -1297,10 +1285,6 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 6781068991430902926, guid: b9b19078909a8c84783c6a9830beb1f4, type: 3}
-      propertyPath: m_Camera
-      value: 
-      objectReference: {fileID: 694388475}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
